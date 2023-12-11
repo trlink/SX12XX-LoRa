@@ -14,6 +14,7 @@
 
 #include <SX127XLT.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
 
 #define LTUNUSED(v) (void) (v)       //add LTUNUSED(variable); in functions to avoid compiler warnings 
 #define USE_SPI_TRANSACTION          //this is the standard behaviour of library, use SPI Transaction switching
@@ -2216,14 +2217,22 @@ uint8_t SX127XLT::receive(uint8_t *rxbuffer, uint8_t size, uint32_t rxtimeout, u
 
   if (rxtimeout == 0)
   {
-    while (!digitalRead(_RXDonePin));                                      //Wait for DIO0 to go high, no timeout, RX DONE
+    while (!digitalRead(_RXDonePin))                                      //Wait for DIO0 to go high, no timeout, RX DONE
+    {
+      delay(10);
+      esp_task_wdt_reset();
+    };
   }
   else
   {
     //change to allow for millis() rollover
     //code was  endtimeoutmS = millis() + rxtimeout; while (!digitalRead(_RXDonePin) && (millis() < endtimeoutmS));
     startmS = millis();
-    while (!digitalRead(_RXDonePin) && ((uint32_t) (millis() - startmS) < rxtimeout));
+    while (!digitalRead(_RXDonePin) && ((uint32_t) (millis() - startmS) < rxtimeout))
+    {
+       delay(10);
+       esp_task_wdt_reset();
+    };
   }
 
   setMode(MODE_STDBY_RC);                                                  //ensure to stop further packet reception

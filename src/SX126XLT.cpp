@@ -13,6 +13,7 @@
 
 #include <SX126XLT.h>
 #include <SPI.h>
+#include <esp_task_wdt.h>
 
 #define LTUNUSED(v) (void) (v)       //add LTUNUSED(variable); to avoid compiler warnings 
 #define USE_SPI_TRANSACTION
@@ -1773,7 +1774,12 @@ uint8_t SX126XLT::receive(uint8_t *rxbuffer, uint8_t size, uint32_t rxtimeout, u
     return 0;                             //not wait requested so no packet length to pass
   }
 
-  while (!digitalRead(_RXDonePin));       //Wait for DIO1 to go high
+  //Wait for DIO1 to go high
+  while (!digitalRead(_RXDonePin))
+  {
+    delay(10);
+    esp_task_wdt_reset();
+  };       
 
   setMode(MODE_STDBY_RC);                 //ensure to stop further packet reception
 
