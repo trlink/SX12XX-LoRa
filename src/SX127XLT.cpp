@@ -2256,23 +2256,28 @@ uint8_t SX127XLT::receive(uint8_t *rxbuffer, uint8_t size, uint32_t rxtimeout, u
     _RXPacketL = size;                        //truncate packet if not enough space in passed buffer
   }
 
-#ifdef USE_SPI_TRANSACTION   //to use SPI_TRANSACTION enable define at beginning of CPP file 
-  SPI.beginTransaction(SPISettings(LTspeedMaximum, LTdataOrder, LTdataMode));
-#endif
-
-  digitalWrite(_NSS, LOW);                    //start the burst read
-  SPI.transfer(REG_FIFO);
-
-  for (index = 0; index < _RXPacketL; index++)
+  if(_RXPacketL > 0)
   {
-    regdata = SPI.transfer(0);
-    rxbuffer[index] = regdata;
-  }
-  digitalWrite(_NSS, HIGH);
 
-#ifdef USE_SPI_TRANSACTION
-  SPI.endTransaction();
-#endif
+    #ifdef USE_SPI_TRANSACTION   //to use SPI_TRANSACTION enable define at beginning of CPP file 
+      SPI.beginTransaction(SPISettings(LTspeedMaximum, LTdataOrder, LTdataMode));
+    #endif
+
+    digitalWrite(_NSS, LOW);                    //start the burst read
+    SPI.transfer(REG_FIFO);
+
+    for (index = 0; index < _RXPacketL; index++)
+    {
+      regdata = SPI.transfer(0);
+      rxbuffer[index] = regdata;
+    }
+
+    digitalWrite(_NSS, HIGH);
+
+    #ifdef USE_SPI_TRANSACTION
+      SPI.endTransaction();
+    #endif
+  };
 
   return _RXPacketL;
 }

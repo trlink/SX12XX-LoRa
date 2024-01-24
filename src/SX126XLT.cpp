@@ -1799,32 +1799,35 @@ uint8_t SX126XLT::receive(uint8_t *rxbuffer, uint8_t size, uint32_t rxtimeout, u
     _RXPacketL = size;                   //truncate packet if not enough space
   }
 
-  RXstart = buffer[1];
-
-  RXend = RXstart + _RXPacketL;
-
-  checkBusy();
-
-#ifdef USE_SPI_TRANSACTION           //to use SPI_TRANSACTION enable define at beginning of CPP file 
-  SPI.beginTransaction(SPISettings(LTspeedMaximum, LTdataOrder, LTdataMode));
-#endif
-
-  digitalWrite(_NSS, LOW);             //start the burst read
-  SPI.transfer(RADIO_READ_BUFFER);
-  SPI.transfer(RXstart);
-  SPI.transfer(0xFF);
-
-  for (index = RXstart; index < RXend; index++)
+  if(_RXPacketL > 0)
   {
-    regdata = SPI.transfer(0);
-    rxbuffer[index] = regdata;
-  }
+    RXstart = buffer[1];
 
-  digitalWrite(_NSS, HIGH);
+    RXend = RXstart + _RXPacketL;
 
-#ifdef USE_SPI_TRANSACTION
-  SPI.endTransaction();
-#endif
+    checkBusy();
+
+    #ifdef USE_SPI_TRANSACTION           //to use SPI_TRANSACTION enable define at beginning of CPP file 
+      SPI.beginTransaction(SPISettings(LTspeedMaximum, LTdataOrder, LTdataMode));
+    #endif
+
+    digitalWrite(_NSS, LOW);             //start the burst read
+    SPI.transfer(RADIO_READ_BUFFER);
+    SPI.transfer(RXstart);
+    SPI.transfer(0xFF);
+
+    for (index = RXstart; index < RXend; index++)
+    {
+      regdata = SPI.transfer(0);
+      rxbuffer[index] = regdata;
+    }
+
+    digitalWrite(_NSS, HIGH);
+
+    #ifdef USE_SPI_TRANSACTION
+      SPI.endTransaction();
+    #endif
+  };
 
   return _RXPacketL;                     //so we can check for packet having enough buffer space
 }
